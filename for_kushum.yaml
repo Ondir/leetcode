@@ -1,0 +1,59 @@
+dbks_amb_parsed_lag:
+  !!python/object:jdbc_metrics.JDBCMetric
+  desc: 'AMB parsed landing lag'
+  src_type: 'dbks'
+  query: |
+    Select MAX(insert_ts) as query_metric
+    from landing_prod.amb_parsed where
+    data_source_date_part> date_add(current_date(),-7);
+  gauge: dbks_amb_lag
+  labels:
+    source: landing_prod.amb_parsed
+    metric_type: max
+    timestamp_field: insert_ts
+    git_repo: core-data/data-engineering/databricks-delta-monitoring
+  grouping_key:
+    source: landing_prod.amb_parsed
+    type: dbks
+  metric_func: max_ts_delay
+
+dbks_ot_cart_lag:
+  !!python/object:jdbc_metrics.JDBCMetric
+  desc: 'OT cart landing lag'
+  src_type: 'dbks'
+  query: |
+    Select MAX(insert_ts) as query_metric
+      from landing_nonprod.kafka_onprem_jash1_prod_openmarketplace_prd816_complete_cart_v1_prod1_us_east_1;
+  gauge: dbks_ot_lag
+  labels:
+    source: openmarketplace_prd816_complete_cart_v1
+    metric_type: max
+    timestamp_field: insert_ts
+    git_repo: core-data/data-engineering/databricks-delta-monitoring/
+  grouping_key:
+    source: openmarketplace_prd816_complete_cart_v1
+    type: dbks
+  metric_func: max_ts_delay
+
+
+dbks_latency_refinery:
+  !!python/object:jdbc_metrics.JDBCMetric
+  desc: 'calculate latency in order'
+  src_type: 'dbks'
+  query: |
+    with landing as (
+    describe history landing_nonprod.kafka_aws_us_east_1_prod_prd1929_cts_host_orders_v1_prod
+    )
+    select (unix_timestamp(current_timestamp) - unix_timestamp(timestamp))/60 latency_seconds
+      from landing
+      limit 1;
+  gauge: dbks_ot_lag
+  labels:
+    source: kafka_aws_us_east_1_prod_prd1929_cts_host_orders_v1_prod
+    metric_type:
+    timestamp_field: insert_ts
+    git_repo: core-data/data-engineering/databricks-delta-monitoring/
+  grouping_key:
+    source: kafka_aws_us_east_1_prod_prd1929_cts_host_orders_v1_prod
+    type: dbks
+  metric_func: max_ts_delay
